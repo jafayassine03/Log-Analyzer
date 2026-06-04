@@ -4,70 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Log Analyzer</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #111827;
-    color: white;
-    margin: 0;
-    padding: 20px;
-}
-
-.container {
-    max-width: 900px;
-    margin: auto;
-}
-
-h1 {
-    text-align: center;
-}
-
-input[type="file"] {
-    margin: 20px 0;
-}
-
-.stats {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.card {
-    flex: 1;
-    background: #1f2937;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-}
-
-.logs {
-    background: #1f2937;
-    padding: 15px;
-    border-radius: 10px;
-    height: 400px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-}
-
-.error {
-    color: #ef4444;
-}
-
-.warning {
-    color: #f59e0b;
-}
-
-.info {
-    color: #10b981;
-}
-</style>
+<link rel="stylesheet" href="loganz.css">
 </head>
 <body>
 
 <div class="container">
+
     <h1>Log Analyzer</h1>
 
-    <input type="file" id="fileInput">
+    <input type="file" id="fileInput" accept=".log,.txt">
+
+    <input type="text" id="searchBox" placeholder="Search logs...">
 
     <div class="stats">
         <div class="card">
@@ -91,11 +38,23 @@ input[type="file"] {
         </div>
     </div>
 
-    <div class="logs" id="logs"></div>
+    <div class="actions">
+        <button id="showAll">Show All</button>
+        <button id="showInfo">INFO</button>
+        <button id="showWarnings">WARNING</button>
+        <button id="showErrors">ERROR</button>
+    </div>
+
+    <div class="logs" id="logs">
+        Upload a log file to begin analysis.
+    </div>
+
 </div>
 
 <script>
 const fileInput = document.getElementById("fileInput");
+const searchBox = document.getElementById("searchBox");
+
 const logsDiv = document.getElementById("logs");
 
 const totalLogs = document.getElementById("totalLogs");
@@ -103,7 +62,65 @@ const infoCount = document.getElementById("infoCount");
 const warningCount = document.getElementById("warningCount");
 const errorCount = document.getElementById("errorCount");
 
+const showAll = document.getElementById("showAll");
+const showInfo = document.getElementById("showInfo");
+const showWarnings = document.getElementById("showWarnings");
+const showErrors = document.getElementById("showErrors");
+
+let allLogs = [];
+
+function displayLogs(lines) {
+    logsDiv.innerHTML = "";
+
+    if (lines.length === 0) {
+        logsDiv.textContent = "No matching log entries found.";
+        return;
+    }
+
+    lines.forEach(line => {
+        const div = document.createElement("div");
+
+        div.textContent = line;
+
+        const upper = line.toUpperCase();
+
+        if (upper.includes("ERROR")) {
+            div.classList.add("error");
+        } else if (upper.includes("WARNING")) {
+            div.classList.add("warning");
+        } else if (upper.includes("INFO")) {
+            div.classList.add("info");
+        }
+
+        logsDiv.appendChild(div);
+    });
+}
+
+function updateStats(lines) {
+    let info = 0;
+    let warning = 0;
+    let error = 0;
+
+    lines.forEach(line => {
+        const upper = line.toUpperCase();
+
+        if (upper.includes("ERROR")) {
+            error++;
+        } else if (upper.includes("WARNING")) {
+            warning++;
+        } else if (upper.includes("INFO")) {
+            info++;
+        }
+    });
+
+    totalLogs.textContent = lines.length;
+    infoCount.textContent = info;
+    warningCount.textContent = warning;
+    errorCount.textContent = error;
+}
+
 fileInput.addEventListener("change", function () {
+
     const file = this.files[0];
 
     if (!file) return;
@@ -111,40 +128,60 @@ fileInput.addEventListener("change", function () {
     const reader = new FileReader();
 
     reader.onload = function (e) {
+
         const content = e.target.result;
-        const lines = content.split("\n");
 
-        let info = 0;
-        let warning = 0;
-        let error = 0;
+        allLogs = content
+            .split("\n")
+            .filter(line => line.trim() !== "");
 
-        logsDiv.innerHTML = "";
-
-        lines.forEach(line => {
-            const div = document.createElement("div");
-            div.textContent = line;
-
-            if (line.toUpperCase().includes("ERROR")) {
-                error++;
-                div.classList.add("error");
-            } else if (line.toUpperCase().includes("WARNING")) {
-                warning++;
-                div.classList.add("warning");
-            } else if (line.toUpperCase().includes("INFO")) {
-                info++;
-                div.classList.add("info");
-            }
-
-            logsDiv.appendChild(div);
-        });
-
-        totalLogs.textContent = lines.length;
-        infoCount.textContent = info;
-        warningCount.textContent = warning;
-        errorCount.textContent = error;
+        updateStats(allLogs);
+        displayLogs(allLogs);
     };
 
     reader.readAsText(file);
+});
+
+searchBox.addEventListener("input", () => {
+
+    const term = searchBox.value.toLowerCase();
+
+    const filtered = allLogs.filter(line =>
+        line.toLowerCase().includes(term)
+    );
+
+    displayLogs(filtered);
+});
+
+showAll.addEventListener("click", () => {
+    displayLogs(allLogs);
+});
+
+showInfo.addEventListener("click", () => {
+
+    const filtered = allLogs.filter(line =>
+        line.toUpperCase().includes("INFO")
+    );
+
+    displayLogs(filtered);
+});
+
+showWarnings.addEventListener("click", () => {
+
+    const filtered = allLogs.filter(line =>
+        line.toUpperCase().includes("WARNING")
+    );
+
+    displayLogs(filtered);
+});
+
+showErrors.addEventListener("click", () => {
+
+    const filtered = allLogs.filter(line =>
+        line.toUpperCase().includes("ERROR")
+    );
+
+    displayLogs(filtered);
 });
 </script>
 
