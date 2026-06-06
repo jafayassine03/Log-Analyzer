@@ -1,57 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Log Analyzer</title>
-<link rel="stylesheet" href="loganz.css">
-</head>
-<body>
-
-<div class="container">
-
-    <h1>Log Analyzer</h1>
-
-    <input type="file" id="fileInput" accept=".log,.txt">
-
-    <input type="text" id="searchBox" placeholder="Search logs...">
-
-    <div class="stats">
-        <div class="card">
-            <h2 id="totalLogs">0</h2>
-            <p>Total Lines</p>
-        </div>
-
-        <div class="card">
-            <h2 id="infoCount">0</h2>
-            <p>INFO</p>
-        </div>
-
-        <div class="card">
-            <h2 id="warningCount">0</h2>
-            <p>WARNING</p>
-        </div>
-
-        <div class="card">
-            <h2 id="errorCount">0</h2>
-            <p>ERROR</p>
-        </div>
-    </div>
-
-    <div class="actions">
-        <button id="showAll">Show All</button>
-        <button id="showInfo">INFO</button>
-        <button id="showWarnings">WARNING</button>
-        <button id="showErrors">ERROR</button>
-    </div>
-
-    <div class="logs" id="logs">
-        Upload a log file to begin analysis.
-    </div>
-
-</div>
-
-<script>
 const fileInput = document.getElementById("fileInput");
 const searchBox = document.getElementById("searchBox");
 
@@ -120,7 +66,6 @@ function updateStats(lines) {
 }
 
 fileInput.addEventListener("change", function () {
-
     const file = this.files[0];
 
     if (!file) return;
@@ -128,7 +73,6 @@ fileInput.addEventListener("change", function () {
     const reader = new FileReader();
 
     reader.onload = function (e) {
-
         const content = e.target.result;
 
         allLogs = content
@@ -143,7 +87,6 @@ fileInput.addEventListener("change", function () {
 });
 
 searchBox.addEventListener("input", () => {
-
     const term = searchBox.value.toLowerCase();
 
     const filtered = allLogs.filter(line =>
@@ -158,7 +101,6 @@ showAll.addEventListener("click", () => {
 });
 
 showInfo.addEventListener("click", () => {
-
     const filtered = allLogs.filter(line =>
         line.toUpperCase().includes("INFO")
     );
@@ -167,7 +109,6 @@ showInfo.addEventListener("click", () => {
 });
 
 showWarnings.addEventListener("click", () => {
-
     const filtered = allLogs.filter(line =>
         line.toUpperCase().includes("WARNING")
     );
@@ -176,14 +117,9 @@ showWarnings.addEventListener("click", () => {
 });
 
 showErrors.addEventListener("click", () => {
-
     const filtered = allLogs.filter(line =>
         line.toUpperCase().includes("ERROR")
     );
 
     displayLogs(filtered);
 });
-</script>
-<script src="logan.js"></script> 
-</body>
-</html>
