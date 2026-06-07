@@ -43,6 +43,7 @@
         <button id="showInfo">INFO</button>
         <button id="showWarnings">WARNING</button>
         <button id="showErrors">ERROR</button>
+        <button id="exportLogs">Export Logs</button>
     </div>
 
     <div class="logs" id="logs">
@@ -66,10 +67,14 @@ const showAll = document.getElementById("showAll");
 const showInfo = document.getElementById("showInfo");
 const showWarnings = document.getElementById("showWarnings");
 const showErrors = document.getElementById("showErrors");
+const exportLogs = document.getElementById("exportLogs");
 
 let allLogs = [];
+let currentLogs = [];
 
 function displayLogs(lines) {
+    currentLogs = [...lines];
+
     logsDiv.innerHTML = "";
 
     if (lines.length === 0) {
@@ -183,7 +188,33 @@ showErrors.addEventListener("click", () => {
 
     displayLogs(filtered);
 });
+
+exportLogs.addEventListener("click", () => {
+
+    if (currentLogs.length === 0) return;
+
+    const blob = new Blob([currentLogs.join("\n")], {
+        type: "text/plain"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "filtered_logs.txt";
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+});
 </script>
-<script src="logan.js"></script> 
+
+<script src="logan.js"></script>
+
 </body>
 </html>
