@@ -10,6 +10,7 @@
 
 <div class="container">
     <h1>Log Analyzer</h1>
+
     <input type="file" id="fileInput" accept=".log,.txt">
     <input type="text" id="searchBox" placeholder="Search logs...">
 
@@ -38,6 +39,7 @@
         <button id="showWarnings">WARNING</button>
         <button id="showErrors">ERROR</button>
         <button id="exportLogs">Export Logs</button>
+        <button id="toggleTheme">🌙 Dark Mode</button>
     </div>
 
     <div class="logs" id="logs">
@@ -58,6 +60,7 @@ const showInfo = document.getElementById("showInfo");
 const showWarnings = document.getElementById("showWarnings");
 const showErrors = document.getElementById("showErrors");
 const exportLogs = document.getElementById("exportLogs");
+const toggleTheme = document.getElementById("toggleTheme");
 
 let allLogs = [];
 let currentLogs = [];
@@ -74,6 +77,7 @@ function displayLogs(lines) {
     lines.forEach(line => {
         const div = document.createElement("div");
         div.textContent = line;
+
         const upper = line.toUpperCase();
 
         if (upper.includes("ERROR")) {
@@ -116,8 +120,10 @@ fileInput.addEventListener("change", function () {
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = function (e) {
         const content = e.target.result;
+
         allLogs = content
             .split("\n")
             .filter(line => line.trim() !== "");
@@ -125,14 +131,17 @@ fileInput.addEventListener("change", function () {
         updateStats(allLogs);
         displayLogs(allLogs);
     };
+
     reader.readAsText(file);
 });
 
 searchBox.addEventListener("input", () => {
     const term = searchBox.value.toLowerCase();
+
     const filtered = allLogs.filter(line =>
         line.toLowerCase().includes(term)
     );
+
     displayLogs(filtered);
 });
 
@@ -141,42 +150,60 @@ showAll.addEventListener("click", () => {
 });
 
 showInfo.addEventListener("click", () => {
-    const filtered = allLogs.filter(line =>
-        line.toUpperCase().includes("INFO")
+    displayLogs(
+        allLogs.filter(line =>
+            line.toUpperCase().includes("INFO")
+        )
     );
-    displayLogs(filtered);
 });
 
 showWarnings.addEventListener("click", () => {
-    const filtered = allLogs.filter(line =>
-        line.toUpperCase().includes("WARNING")
+    displayLogs(
+        allLogs.filter(line =>
+            line.toUpperCase().includes("WARNING")
+        )
     );
-    displayLogs(filtered);
 });
 
 showErrors.addEventListener("click", () => {
-    const filtered = allLogs.filter(line =>
-        line.toUpperCase().includes("ERROR")
+    displayLogs(
+        allLogs.filter(line =>
+            line.toUpperCase().includes("ERROR")
+        )
     );
-    displayLogs(filtered);
 });
 
 exportLogs.addEventListener("click", () => {
     if (currentLogs.length === 0) return;
 
-    const blob = new Blob([currentLogs.join("\n")], {
-        type: "text/plain"
-    });
+    const blob = new Blob(
+        [currentLogs.join("\n")],
+        { type: "text/plain" }
+    );
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = "filtered_logs.txt";
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
 });
+
+toggleTheme.addEventListener("click", () => {
+    document.body.classList.toggle("light-mode");
+
+    if (document.body.classList.contains("light-mode")) {
+        toggleTheme.textContent = " Light Mode";
+    } else {
+        toggleTheme.textContent = " Dark Mode";
+    }
+});
 </script>
-<script src="logan.js"></script>
+
 </body>
 </html>
