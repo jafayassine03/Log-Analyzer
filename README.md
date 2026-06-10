@@ -29,46 +29,6 @@ This application allows users to upload log files, analyze log entries, and view
 
 ---
 
-## Installation
-
-### Option 1: Download
-
-Download the project files and place them in a folder:
-
-```text
-log-analyzer/
-│
-├── index.html
-└── README.md
-```
-
-Open `index.html` in your web browser.
-
----
-
-### Option 2: Local Web Server
-
-Navigate to the project folder:
-
-```bash
-cd log-analyzer
-```
-
-Start a local server using Python:
-
-```bash
-python -m http.server 8000
-```
-
-Open:
-
-```text
-http://localhost:8000
-```
-
-in your browser.
-
----
 
 ## Usage
 
