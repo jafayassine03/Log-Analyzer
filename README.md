@@ -18,6 +18,7 @@ This application allows users to upload log files, analyze log entries, and view
 * Fast client-side processing
 * No external libraries required
 * Responsive design
+* One-click clear logs button
 
 ---
 
