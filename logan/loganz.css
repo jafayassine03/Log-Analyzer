@@ -210,3 +210,55 @@ input[type="file"]:hover,
         height: 420px;
     }
 }
+.chart-container{
+    background: rgba(31,41,55,.75);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:25px;
+    backdrop-filter: blur(15px);
+}
+
+#logChart{
+    width:100%;
+    height:300px;
+}
+
+.log-entry.copied{
+    transform:scale(1.02);
+    background:rgba(34,197,94,.15);
+}
+
+.line-number{
+    display:inline-block;
+    width:70px;
+    color:#94a3b8;
+    font-weight:bold;
+}
+
+.log-entry{
+    cursor:pointer;
+}
+
+.empty-state{
+    text-align:center;
+    color:#94a3b8;
+    padding:50px;
+}
+
+.light-mode{
+    background:#f1f5f9;
+    color:#111827;
+}
+
+.light-mode .card,
+.light-mode .logs,
+.light-mode .chart-container{
+    background:white;
+    color:#111827;
+}
+
+.critical{
+    color:#ff0080;
+    font-weight:bold;
+}

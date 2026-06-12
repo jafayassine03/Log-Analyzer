@@ -31,6 +31,10 @@
             <h2 id="errorCount">0</h2>
             <p>ERROR</p>
         </div>
+        <div class="card">
+    <h2 id="criticalCount">0</h2>
+    <p>CRITICAL</p>
+</div>
     </div>
 
     <div class="actions">
@@ -40,7 +44,12 @@
         <button id="showErrors">ERROR</button>
         <button id="exportLogs">Export Logs</button>
         <button id="toggleTheme">🌙 Dark Mode</button>
+        <button id="showCritical">CRITICAL</button>
+<button id="clearLogs">Clear</button>
     </div>
+    <div class="chart-container">
+    <canvas id="logChart"></canvas>
+</div>
 
     <div class="logs" id="logs">
         Upload a log file to begin analysis.
@@ -204,6 +213,7 @@ toggleTheme.addEventListener("click", () => {
     }
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 </html>

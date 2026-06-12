@@ -1,29 +1,42 @@
 const fileInput = document.getElementById("fileInput");
 const searchBox = document.getElementById("searchBox");
-
 const logsDiv = document.getElementById("logs");
 
 const totalLogs = document.getElementById("totalLogs");
 const infoCount = document.getElementById("infoCount");
 const warningCount = document.getElementById("warningCount");
 const errorCount = document.getElementById("errorCount");
+const criticalCount = document.getElementById("criticalCount");
 
 const showAll = document.getElementById("showAll");
 const showInfo = document.getElementById("showInfo");
 const showWarnings = document.getElementById("showWarnings");
 const showErrors = document.getElementById("showErrors");
+const showCritical = document.getElementById("showCritical");
+
+const exportLogs = document.getElementById("exportLogs");
+const toggleTheme = document.getElementById("toggleTheme");
+const clearLogs = document.getElementById("clearLogs");
 
 let allLogs = [];
 let currentFilter = "ALL";
+let chart;
 
 function getLogType(line) {
     const upper = line.toUpperCase();
 
+    if (upper.includes("CRITICAL")) return "CRITICAL";
     if (upper.includes("ERROR")) return "ERROR";
     if (upper.includes("WARNING")) return "WARNING";
     if (upper.includes("INFO")) return "INFO";
 
     return "OTHER";
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function displayLogs(lines) {
@@ -45,9 +58,10 @@ function displayLogs(lines) {
 
         const type = getLogType(line);
 
-        if (type === "ERROR") div.classList.add("error");
-        if (type === "WARNING") div.classList.add("warning");
         if (type === "INFO") div.classList.add("info");
+        if (type === "WARNING") div.classList.add("warning");
+        if (type === "ERROR") div.classList.add("error");
+        if (type === "CRITICAL") div.classList.add("critical");
 
         div.innerHTML = `
             <span class="line-number">#${index + 1}</span>
@@ -74,6 +88,7 @@ function updateStats(lines) {
     let info = 0;
     let warning = 0;
     let error = 0;
+    let critical = 0;
 
     const duplicates = new Set();
     const seen = new Set();
@@ -84,6 +99,7 @@ function updateStats(lines) {
         if (type === "INFO") info++;
         if (type === "WARNING") warning++;
         if (type === "ERROR") error++;
+        if (type === "CRITICAL") critical++;
 
         if (seen.has(line)) {
             duplicates.add(line);
@@ -97,6 +113,10 @@ function updateStats(lines) {
     warningCount.textContent = warning;
     errorCount.textContent = error;
 
+    if (criticalCount) {
+        criticalCount.textContent = critical;
+    }
+
     const duplicateCounter = document.getElementById("duplicateCount");
 
     if (duplicateCounter) {
@@ -104,10 +124,47 @@ function updateStats(lines) {
     }
 }
 
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+function updateChart(lines) {
+    const canvas = document.getElementById("logChart");
+
+    if (!canvas || typeof Chart === "undefined") return;
+
+    let info = 0;
+    let warning = 0;
+    let error = 0;
+    let critical = 0;
+
+    lines.forEach(line => {
+        const type = getLogType(line);
+
+        if (type === "INFO") info++;
+        if (type === "WARNING") warning++;
+        if (type === "ERROR") error++;
+        if (type === "CRITICAL") critical++;
+    });
+
+    if (chart) {
+        chart.destroy();
+    }
+
+    chart = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: ["INFO", "WARNING", "ERROR", "CRITICAL"],
+            datasets: [{
+                data: [info, warning, error, critical]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
 }
 
 function applyFilters() {
@@ -129,6 +186,7 @@ function applyFilters() {
 
     displayLogs(filtered);
     updateStats(filtered);
+    updateChart(filtered);
 }
 
 fileInput.addEventListener("change", function () {
@@ -171,17 +229,73 @@ showErrors.addEventListener("click", () => {
     applyFilters();
 });
 
-document.getElementById("exportLogs")?.addEventListener("click", () => {
+if (showCritical) {
+    showCritical.addEventListener("click", () => {
+        currentFilter = "CRITICAL";
+        applyFilters();
+    });
+}
+
+exportLogs.addEventListener("click", () => {
     const text = Array.from(
         document.querySelectorAll(".log-text")
     )
         .map(el => el.textContent)
         .join("\n");
 
-    const blob = new Blob([text], { type: "text/plain" });
+    if (!text.trim()) return;
+
+    const blob = new Blob(
+        [text],
+        { type: "text/plain" }
+    );
 
     const a = document.createElement("a");
+
     a.href = URL.createObjectURL(blob);
     a.download = "filtered_logs.txt";
+
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(a.href);
 });
+
+if (toggleTheme) {
+    toggleTheme.addEventListener("click", () => {
+        document.body.classList.toggle("light-mode");
+
+        if (document.body.classList.contains("light-mode")) {
+            toggleTheme.textContent = "☀️ Light Mode";
+        } else {
+            toggleTheme.textContent = "🌙 Dark Mode";
+        }
+    });
+}
+
+if (clearLogs) {
+    clearLogs.addEventListener("click", () => {
+        allLogs = [];
+        currentFilter = "ALL";
+
+        logsDiv.innerHTML =
+            "Upload a log file to begin analysis.";
+
+        totalLogs.textContent = "0";
+        infoCount.textContent = "0";
+        warningCount.textContent = "0";
+        errorCount.textContent = "0";
+
+        if (criticalCount) {
+            criticalCount.textContent = "0";
+        }
+
+        searchBox.value = "";
+
+        if (chart) {
+            chart.destroy();
+            chart = null;
+        }
+    });
+}
