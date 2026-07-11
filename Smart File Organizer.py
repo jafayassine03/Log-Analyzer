@@ -1,3 +1,4 @@
+```python
 import os
 import shutil
 import hashlib
@@ -250,7 +251,9 @@ def statistics(path):
 
     for ext in sorted(extensions):
         print(f"{ext:<15}{extensions[ext]}")
-        def search_files(path):
+
+
+def search_files(path):
 
     if not os.path.isdir(path):
         print("Invalid folder.")
@@ -524,7 +527,9 @@ def export_report(path):
     title("Export")
 
     print("Saved as report.json")
-    def clear_history():
+
+
+def clear_history():
 
     global history
 
@@ -657,6 +662,48 @@ def duplicate_cleanup(path):
     print("Deleted duplicates:", deleted)
 
 
+def sync_folders(source, destination):
+    if not os.path.isdir(source):
+        print("Invalid source folder.")
+        return
+
+    if not os.path.isdir(destination):
+        print("Invalid destination folder.")
+        return
+
+    synced = 0
+    skipped = 0
+
+    for root, dirs, files in os.walk(source):
+        rel_path = os.path.relpath(root, source)
+        dest_root = os.path.join(destination, rel_path)
+
+        os.makedirs(dest_root, exist_ok=True)
+
+        for file in files:
+            src_file = os.path.join(root, file)
+            dest_file = os.path.join(dest_root, file)
+
+            try:
+                if os.path.exists(dest_file):
+                    src_mtime = os.path.getmtime(src_file)
+                    dest_mtime = os.path.getmtime(dest_file)
+
+                    if src_mtime <= dest_mtime:
+                        skipped += 1
+                        continue
+
+                shutil.copy2(src_file, dest_file)
+                synced += 1
+
+            except Exception as e:
+                print(f"Error syncing {src_file}: {e}")
+
+    title("Sync Complete")
+    print(f"Synced: {synced}")
+    print(f"Skipped (up to date): {skipped}")
+
+
 def menu():
 
     load_history()
@@ -684,6 +731,7 @@ def menu():
 16. Show History
 17. Clear History
 18. Open Folder
+19. Sync Folders
 0. Exit
 """)
 
@@ -761,6 +809,12 @@ def menu():
 
             open_folder(input("Folder: "))
 
+        elif choice == "19":
+
+            source = input("Source folder: ")
+            destination = input("Destination folder: ")
+            sync_folders(source, destination)
+
         elif choice == "0":
 
             print("Goodbye.")
@@ -772,3 +826,4 @@ def menu():
 
 
 menu()
+```
