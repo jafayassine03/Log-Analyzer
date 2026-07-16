@@ -1,4 +1,3 @@
-```python
 import os
 import shutil
 import hashlib
@@ -6,6 +5,7 @@ import json
 from datetime import datetime
 
 history_file = "organizer_history.json"
+recycle_bin = ".organizer_recycle_bin"
 
 categories = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".svg", ".ico"],
@@ -45,6 +45,112 @@ def title(text):
     line()
 
 
+def create_recycle_bin(path):
+    folder = os.path.join(path, recycle_bin)
+    os.makedirs(folder, exist_ok=True)
+    return folder
+
+
+def move_to_recycle_bin(file, path):
+    folder = create_recycle_bin(path)
+
+    name = os.path.basename(file)
+
+    destination = os.path.join(
+        folder,
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{name}"
+    )
+
+    shutil.move(file, destination)
+
+    return destination
+
+
+def view_recycle_bin(path):
+
+    folder = os.path.join(path, recycle_bin)
+
+    title("Recycle Bin")
+
+    if not os.path.isdir(folder):
+        print("Recycle Bin is empty.")
+        return
+
+    files = os.listdir(folder)
+
+    if len(files) == 0:
+        print("Recycle Bin is empty.")
+        return
+
+    for i, file in enumerate(files, 1):
+        print(f"{i}. {file}")
+
+    print()
+    print("Files:", len(files))
+
+
+def restore_recycle_bin(path):
+
+    folder = os.path.join(path, recycle_bin)
+
+    if not os.path.isdir(folder):
+        print("Recycle Bin is empty.")
+        return
+
+    restored = 0
+
+    for file in os.listdir(folder):
+
+        source = os.path.join(folder, file)
+
+        original_name = file.split("_", 2)[-1]
+
+        destination = os.path.join(path, original_name)
+
+        try:
+            shutil.move(source, destination)
+            restored += 1
+
+        except:
+            pass
+
+    title("Recycle Restore")
+
+    print("Restored:", restored)
+
+
+def empty_recycle_bin(path):
+
+    folder = os.path.join(path, recycle_bin)
+
+    if not os.path.isdir(folder):
+        print("Recycle Bin is already empty.")
+        return
+
+    deleted = 0
+
+    for file in os.listdir(folder):
+
+        full = os.path.join(folder, file)
+
+        try:
+
+            if os.path.isfile(full):
+                os.remove(full)
+
+            else:
+                shutil.rmtree(full)
+
+            deleted += 1
+
+        except:
+            pass
+
+    title("Recycle Bin Cleared")
+
+    print("Deleted:", deleted)
+
+
 def get_category(filename):
     ext = os.path.splitext(filename)[1].lower()
 
@@ -56,6 +162,7 @@ def get_category(filename):
 
 
 def preview(path):
+
     if not os.path.isdir(path):
         print("Invalid folder.")
         return
@@ -65,10 +172,13 @@ def preview(path):
     files = 0
 
     for file in os.listdir(path):
+
         full = os.path.join(path, file)
 
         if os.path.isfile(full):
+
             print(f"{file}  -->  {get_category(file)}")
+
             files += 1
 
     print()
@@ -76,6 +186,7 @@ def preview(path):
 
 
 def organize(path):
+
     global history
 
     if not os.path.isdir(path):
@@ -100,7 +211,9 @@ def organize(path):
         destination = os.path.join(destination_folder, file)
 
         if os.path.exists(destination):
+
             name, ext = os.path.splitext(file)
+
             destination = os.path.join(
                 destination_folder,
                 f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
@@ -118,10 +231,12 @@ def organize(path):
     save_history()
 
     title("Finished")
+
     print("Moved Files:", moved)
 
 
 def undo():
+
     global history
 
     if len(history) == 0:
@@ -133,14 +248,19 @@ def undo():
     for item in reversed(history):
 
         if os.path.exists(item["new"]):
+
             shutil.move(item["new"], item["old"])
+
             restored += 1
 
     history = []
+
     save_history()
 
     title("Undo Complete")
+
     print("Restored Files:", restored)
+
 
 
 def hash_file(path):
@@ -161,6 +281,7 @@ def hash_file(path):
     return sha.hexdigest()
 
 
+
 def duplicate_scan(path):
 
     if not os.path.isdir(path):
@@ -172,6 +293,9 @@ def duplicate_scan(path):
     duplicates = []
 
     for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
 
         for file in files:
 
@@ -193,17 +317,76 @@ def duplicate_scan(path):
 
                 pass
 
+
     title("Duplicate Files")
 
+
     if len(duplicates) == 0:
+
         print("No duplicates found.")
+
         return
+
 
     for original, duplicate in duplicates:
 
         print("Original :", original)
+
         print("Duplicate:", duplicate)
+
         print("-" * 60)
+
+
+
+def duplicate_cleanup(path):
+
+    if not os.path.isdir(path):
+        print("Invalid folder.")
+        return
+
+
+    hashes = {}
+
+    moved = 0
+
+
+    for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
+
+
+        for file in files:
+
+            full = os.path.join(root, file)
+
+
+            try:
+
+                h = hash_file(full)
+
+
+                if h in hashes:
+
+                    move_to_recycle_bin(full, path)
+
+                    moved += 1
+
+
+                else:
+
+                    hashes[h] = full
+
+
+            except:
+
+                pass
+
+
+    title("Duplicate Cleanup")
+
+    print("Moved to Recycle Bin:", moved)
+
 
 
 def statistics(path):
@@ -212,45 +395,63 @@ def statistics(path):
         print("Invalid folder.")
         return
 
+
     total_files = 0
+
     total_size = 0
 
     extensions = {}
 
+
     for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
+
 
         for file in files:
 
             full = os.path.join(root, file)
 
+
             try:
 
                 total_files += 1
 
-                size = os.path.getsize(full)
+                total_size += os.path.getsize(full)
 
-                total_size += size
 
                 ext = os.path.splitext(file)[1].lower()
+
 
                 if ext == "":
                     ext = "No Extension"
 
+
                 extensions[ext] = extensions.get(ext, 0) + 1
+
 
             except:
 
                 pass
 
+
     title("Statistics")
 
+
     print("Files:", total_files)
+
     print("Folders:", sum(len(d) for _, d, _ in os.walk(path)))
+
     print("Total Size:", round(total_size / 1024 / 1024, 2), "MB")
+
     print()
 
+
     for ext in sorted(extensions):
+
         print(f"{ext:<15}{extensions[ext]}")
+
 
 
 def search_files(path):
@@ -259,28 +460,45 @@ def search_files(path):
         print("Invalid folder.")
         return
 
+
     keyword = input("Search: ").lower()
+
 
     results = []
 
+
     for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
+
 
         for file in files:
 
             if keyword in file.lower():
+
                 results.append(os.path.join(root, file))
+
 
     title("Search Results")
 
+
     if len(results) == 0:
+
         print("No matching files found.")
+
         return
 
+
     for i, file in enumerate(results, 1):
+
         print(f"{i}. {file}")
 
+
     print()
+
     print("Found:", len(results))
+
 
 
 def largest_files(path):
@@ -289,13 +507,20 @@ def largest_files(path):
         print("Invalid folder.")
         return
 
+
     files_data = []
 
+
     for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
+
 
         for file in files:
 
             full = os.path.join(root, file)
+
 
             try:
 
@@ -303,21 +528,59 @@ def largest_files(path):
 
                 files_data.append((size, full))
 
+
             except:
 
                 pass
 
+
     files_data.sort(reverse=True)
+
 
     title("Largest Files")
 
-    if len(files_data) == 0:
-        print("No files found.")
-        return
 
     for size, file in files_data[:10]:
 
         print(f"{round(size / 1024 / 1024,2):>8} MB   {file}")
+def recent_files(path):
+
+    if not os.path.isdir(path):
+        print("Invalid folder.")
+        return
+
+    data = []
+
+    for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
+
+        for file in files:
+
+            full = os.path.join(root, file)
+
+            try:
+
+                modified = os.path.getmtime(full)
+
+                data.append((modified, full))
+
+            except:
+
+                pass
+
+    data.sort(reverse=True)
+
+    title("Recently Modified Files")
+
+    for modified, file in data[:10]:
+
+        print(
+            datetime.fromtimestamp(modified).strftime("%Y-%m-%d %H:%M:%S"),
+            file
+        )
+
 
 
 def delete_empty_folders(path):
@@ -334,6 +597,9 @@ def delete_empty_folders(path):
 
             folder = os.path.join(root, directory)
 
+            if recycle_bin in folder:
+                continue
+
             try:
 
                 if len(os.listdir(folder)) == 0:
@@ -346,9 +612,11 @@ def delete_empty_folders(path):
 
                 pass
 
+
     title("Cleanup")
 
     print("Removed Empty Folders:", removed)
+
 
 
 def bulk_rename(path):
@@ -369,13 +637,11 @@ def bulk_rename(path):
 
             ext = os.path.splitext(file)[1]
 
-            new_name = f"{prefix}_{renamed + 1}{ext}"
-
-            destination = os.path.join(path, new_name)
+            new_name = f"{prefix}_{renamed+1}{ext}"
 
             try:
 
-                os.rename(full, destination)
+                os.rename(full, os.path.join(path, new_name))
 
                 renamed += 1
 
@@ -383,108 +649,11 @@ def bulk_rename(path):
 
                 pass
 
+
     title("Bulk Rename")
 
     print("Renamed:", renamed)
 
-
-def recent_files(path):
-
-    if not os.path.isdir(path):
-        print("Invalid folder.")
-        return
-
-    data = []
-
-    for root, dirs, files in os.walk(path):
-
-        for file in files:
-
-            full = os.path.join(root, file)
-
-            try:
-
-                modified = os.path.getmtime(full)
-
-                data.append((modified, full))
-
-            except:
-
-                pass
-
-    data.sort(reverse=True)
-
-    title("Recently Modified Files")
-
-    if len(data) == 0:
-        print("No files found.")
-        return
-
-    for modified, file in data[:10]:
-
-        print(
-            datetime.fromtimestamp(modified).strftime("%Y-%m-%d %H:%M:%S"),
-            file
-        )
-
-
-def folder_sizes(path):
-
-    if not os.path.isdir(path):
-        print("Invalid folder.")
-        return
-
-    title("Folder Sizes")
-
-    for item in os.listdir(path):
-
-        folder = os.path.join(path, item)
-
-        if os.path.isdir(folder):
-
-            total = 0
-
-            for root, dirs, files in os.walk(folder):
-
-                for file in files:
-
-                    full = os.path.join(root, file)
-
-                    try:
-
-                        total += os.path.getsize(full)
-
-                    except:
-
-                        pass
-
-            print(f"{item:<25}{round(total/1024/1024,2)} MB")
-
-
-def file_type_report(path):
-
-    if not os.path.isdir(path):
-        print("Invalid folder.")
-        return
-
-    report = {}
-
-    for root, dirs, files in os.walk(path):
-
-        for file in files:
-
-            ext = os.path.splitext(file)[1].lower()
-
-            if ext == "":
-                ext = "No Extension"
-
-            report[ext] = report.get(ext, 0) + 1
-
-    title("File Type Report")
-
-    for ext, count in sorted(report.items()):
-
-        print(f"{ext:<15}{count}")
 
 
 def export_report(path):
@@ -493,6 +662,7 @@ def export_report(path):
         print("Invalid folder.")
         return
 
+
     report = {
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "files": 0,
@@ -500,40 +670,73 @@ def export_report(path):
         "size_mb": 0
     }
 
-    total_size = 0
+
+    total = 0
+
 
     for root, dirs, files in os.walk(path):
+
+        if recycle_bin in root:
+            continue
 
         report["folders"] += len(dirs)
 
         report["files"] += len(files)
 
+
         for file in files:
 
             try:
 
-                total_size += os.path.getsize(os.path.join(root, file))
+                total += os.path.getsize(
+                    os.path.join(root,file)
+                )
 
             except:
 
                 pass
 
-    report["size_mb"] = round(total_size / 1024 / 1024, 2)
 
-    with open("report.json", "w") as f:
+    report["size_mb"] = round(total / 1024 / 1024, 2)
 
-        json.dump(report, f, indent=4)
+
+    with open("report.json","w") as f:
+
+        json.dump(report,f,indent=4)
+
 
     title("Export")
 
     print("Saved as report.json")
 
 
+
+def show_history():
+
+    title("Organization History")
+
+    if len(history)==0:
+
+        print("No history available.")
+
+        return
+
+
+    for item in history:
+
+        print("FROM:",item["old"])
+
+        print("TO  :",item["new"])
+
+        print("-"*60)
+
+
+
 def clear_history():
 
     global history
 
-    history = []
+    history=[]
 
     save_history()
 
@@ -542,20 +745,6 @@ def clear_history():
     print("Organization history deleted.")
 
 
-def show_history():
-
-    title("Organization History")
-
-    if len(history) == 0:
-        print("No history available.")
-        return
-
-    for item in history:
-
-        print("FROM:", item["old"])
-        print("TO  :", item["new"])
-        print("-" * 60)
-
 
 def open_folder(path):
 
@@ -563,154 +752,34 @@ def open_folder(path):
         print("Invalid folder.")
         return
 
+
     try:
 
-        if os.name == "nt":
+        if os.name=="nt":
+
             os.startfile(path)
 
-        elif os.name == "posix":
+        else:
+
             os.system(f'xdg-open "{path}"')
 
-        else:
-            print("Unsupported system.")
 
     except:
 
         print("Cannot open folder.")
 
 
-def security_check(path):
-
-    if not os.path.isdir(path):
-        print("Invalid folder.")
-        return
-
-    suspicious = []
-
-    dangerous = [
-        ".exe",
-        ".bat",
-        ".cmd",
-        ".scr",
-        ".vbs",
-        ".ps1"
-    ]
-
-    for root, dirs, files in os.walk(path):
-
-        for file in files:
-
-            ext = os.path.splitext(file)[1].lower()
-
-            if ext in dangerous:
-
-                suspicious.append(
-                    os.path.join(root, file)
-                )
-
-    title("Security Check")
-
-    if len(suspicious) == 0:
-
-        print("No suspicious files found.")
-
-    else:
-
-        print("Suspicious files:")
-
-        for file in suspicious:
-
-            print(file)
-
-
-def duplicate_cleanup(path):
-
-    if not os.path.isdir(path):
-        print("Invalid folder.")
-        return
-
-    hashes = {}
-
-    deleted = 0
-
-    for root, dirs, files in os.walk(path):
-
-        for file in files:
-
-            full = os.path.join(root, file)
-
-            try:
-
-                h = hash_file(full)
-
-                if h in hashes:
-
-                    os.remove(full)
-
-                    deleted += 1
-
-                else:
-
-                    hashes[h] = full
-
-            except:
-
-                pass
-
-    title("Duplicate Cleanup")
-
-    print("Deleted duplicates:", deleted)
-
-
-def sync_folders(source, destination):
-    if not os.path.isdir(source):
-        print("Invalid source folder.")
-        return
-
-    if not os.path.isdir(destination):
-        print("Invalid destination folder.")
-        return
-
-    synced = 0
-    skipped = 0
-
-    for root, dirs, files in os.walk(source):
-        rel_path = os.path.relpath(root, source)
-        dest_root = os.path.join(destination, rel_path)
-
-        os.makedirs(dest_root, exist_ok=True)
-
-        for file in files:
-            src_file = os.path.join(root, file)
-            dest_file = os.path.join(dest_root, file)
-
-            try:
-                if os.path.exists(dest_file):
-                    src_mtime = os.path.getmtime(src_file)
-                    dest_mtime = os.path.getmtime(dest_file)
-
-                    if src_mtime <= dest_mtime:
-                        skipped += 1
-                        continue
-
-                shutil.copy2(src_file, dest_file)
-                synced += 1
-
-            except Exception as e:
-                print(f"Error syncing {src_file}: {e}")
-
-    title("Sync Complete")
-    print(f"Synced: {synced}")
-    print(f"Skipped (up to date): {skipped}")
-
 
 def menu():
 
     load_history()
 
+
     while True:
 
+
         title("SMART FILE ORGANIZER PRO")
+
 
         print("""
 1. Preview Organization
@@ -720,104 +789,100 @@ def menu():
 5. Delete Duplicate Files
 6. Search Files
 7. Show Statistics
-8. File Type Report
-9. Find Largest Files
-10. Recently Modified Files
-11. Folder Size Analyzer
-12. Delete Empty Folders
-13. Bulk Rename Files
-14. Security Scan
-15. Export Report
-16. Show History
-17. Clear History
-18. Open Folder
-19. Sync Folders
+8. Find Largest Files
+9. Recently Modified Files
+10. Delete Empty Folders
+11. Bulk Rename Files
+12. Export Report
+13. Show History
+14. Clear History
+15. Open Folder
+16. View Recycle Bin
+17. Restore Recycle Bin
+18. Empty Recycle Bin
 0. Exit
 """)
 
-        choice = input("Select: ")
 
-        if choice == "1":
+        choice=input("Select: ")
+
+
+        if choice=="1":
 
             preview(input("Folder: "))
 
-        elif choice == "2":
+        elif choice=="2":
 
             organize(input("Folder: "))
 
-        elif choice == "3":
+        elif choice=="3":
 
             undo()
 
-        elif choice == "4":
+        elif choice=="4":
 
             duplicate_scan(input("Folder: "))
 
-        elif choice == "5":
+        elif choice=="5":
 
             duplicate_cleanup(input("Folder: "))
 
-        elif choice == "6":
+        elif choice=="6":
 
             search_files(input("Folder: "))
 
-        elif choice == "7":
+        elif choice=="7":
 
             statistics(input("Folder: "))
 
-        elif choice == "8":
-
-            file_type_report(input("Folder: "))
-
-        elif choice == "9":
+        elif choice=="8":
 
             largest_files(input("Folder: "))
 
-        elif choice == "10":
+        elif choice=="9":
 
             recent_files(input("Folder: "))
 
-        elif choice == "11":
-
-            folder_sizes(input("Folder: "))
-
-        elif choice == "12":
+        elif choice=="10":
 
             delete_empty_folders(input("Folder: "))
 
-        elif choice == "13":
+        elif choice=="11":
 
             bulk_rename(input("Folder: "))
 
-        elif choice == "14":
-
-            security_check(input("Folder: "))
-
-        elif choice == "15":
+        elif choice=="12":
 
             export_report(input("Folder: "))
 
-        elif choice == "16":
+        elif choice=="13":
 
             show_history()
 
-        elif choice == "17":
+        elif choice=="14":
 
             clear_history()
 
-        elif choice == "18":
+        elif choice=="15":
 
             open_folder(input("Folder: "))
 
-        elif choice == "19":
+        elif choice=="16":
 
-            source = input("Source folder: ")
-            destination = input("Destination folder: ")
-            sync_folders(source, destination)
+            view_recycle_bin(input("Folder: "))
 
-        elif choice == "0":
+        elif choice=="17":
+
+            restore_recycle_bin(input("Folder: "))
+
+        elif choice=="18":
+
+            empty_recycle_bin(input("Folder: "))
+
+        elif choice=="0":
 
             print("Goodbye.")
+
             break
 
         else:
@@ -825,5 +890,5 @@ def menu():
             print("Invalid option.")
 
 
+
 menu()
-```
