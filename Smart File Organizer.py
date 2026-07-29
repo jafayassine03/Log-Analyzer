@@ -439,6 +439,34 @@ def tree_view(path):
         for file in files:
             print(f"{sub_indent}{file}")
 
+def organize_by_date(path):
+    if not os.path.isdir(path):
+        print("Invalid folder.")
+        return
+    moved = 0
+    for file in os.listdir(path):
+        source = os.path.join(path, file)
+        if not os.path.isfile(source):
+            continue
+        try:
+            modified_time = os.path.getmtime(source)
+            date_folder = datetime.fromtimestamp(modified_time).strftime("%Y-%m")
+            destination_folder = os.path.join(path, "By Date", date_folder)
+            os.makedirs(destination_folder, exist_ok=True)
+            destination = os.path.join(destination_folder, file)
+            if os.path.exists(destination):
+                name, ext = os.path.splitext(file)
+                destination = os.path.join(
+                    destination_folder,
+                    f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
+                )
+            shutil.move(source, destination)
+            moved += 1
+        except:
+            pass
+    title("Date Organization")
+    print("Moved Files:", moved)
+
 def menu():
     load_history()
     while True:
@@ -463,6 +491,7 @@ def menu():
 17. Restore Recycle Bin
 18. Empty Recycle Bin
 19. Directory Tree View
+20. Organize by Date
 0. Exit
 """)
         choice=input("Select: ")
@@ -504,6 +533,8 @@ def menu():
             empty_recycle_bin(input("Folder: "))
         elif choice=="19":
             tree_view(input("Folder: "))
+        elif choice=="20":
+            organize_by_date(input("Folder: "))
         elif choice=="0":
             print("Goodbye.")
             break
