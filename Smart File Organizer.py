@@ -467,6 +467,27 @@ def organize_by_date(path):
     title("Date Organization")
     print("Moved Files:", moved)
 
+def find_broken_symlinks(path):
+    if not os.path.isdir(path):
+        print("Invalid folder.")
+        return
+    broken = []
+    for root, dirs, files in os.walk(path):
+        if recycle_bin in root:
+            continue
+        for file in files:
+            full = os.path.join(root, file)
+            if os.path.islink(full) and not os.path.exists(os.readlink(full)):
+                broken.append(full)
+    title("Broken Symlinks")
+    if len(broken) == 0:
+        print("No broken symlinks found.")
+        return
+    for i, link in enumerate(broken, 1):
+        print(f"{i}. {link}")
+    print()
+    print("Found:", len(broken))
+
 def menu():
     load_history()
     while True:
@@ -492,6 +513,7 @@ def menu():
 18. Empty Recycle Bin
 19. Directory Tree View
 20. Organize by Date
+21. Find Broken Symlinks
 0. Exit
 """)
         choice=input("Select: ")
@@ -535,6 +557,8 @@ def menu():
             tree_view(input("Folder: "))
         elif choice=="20":
             organize_by_date(input("Folder: "))
+        elif choice=="21":
+            find_broken_symlinks(input("Folder: "))
         elif choice=="0":
             print("Goodbye.")
             break
