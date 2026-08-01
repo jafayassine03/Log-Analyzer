@@ -488,6 +488,34 @@ def find_broken_symlinks(path):
     print()
     print("Found:", len(broken))
 
+def secure_shred(path):
+    if not os.path.isdir(path):
+        print("Invalid folder.")
+        return
+    
+    filename = input("Enter exact filename or full path to shred: ").strip()
+    full_path = os.path.join(path, filename) if not os.path.exists(filename) else filename
+    
+    if not os.path.isfile(full_path):
+        print("File not found.")
+        return
+        
+    confirm = input(f"Are you sure you want to permanently shred '{full_path}'? (y/n): ").lower()
+    if confirm != 'y':
+        print("Shredding cancelled.")
+        return
+        
+    try:
+        file_size = os.path.getsize(full_path)
+        with open(full_path, "ba+") as f:
+            f.seek(0)
+            f.write(os.urandom(file_size))
+        os.remove(full_path)
+        title("File Shredded")
+        print("File securely overwritten and deleted.")
+    except Exception as e:
+        print("Error shredding file:", e)
+
 def menu():
     load_history()
     while True:
@@ -514,6 +542,7 @@ def menu():
 19. Directory Tree View
 20. Organize by Date
 21. Find Broken Symlinks
+22. Secure Shred File
 0. Exit
 """)
         choice=input("Select: ")
@@ -559,6 +588,8 @@ def menu():
             organize_by_date(input("Folder: "))
         elif choice=="21":
             find_broken_symlinks(input("Folder: "))
+        elif choice=="22":
+            secure_shred(input("Folder: "))
         elif choice=="0":
             print("Goodbye.")
             break
