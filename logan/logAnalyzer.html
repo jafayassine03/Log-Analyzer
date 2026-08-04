@@ -92,6 +92,8 @@ placeholder="Search logs..."
 
 <button id="exportLogs">Export Logs</button>
 
+<button id="exportJson">Export JSON</button>
+
 <button id="clearLogs">Clear</button>
 
 <button id="toggleTheme">🌙 Dark Mode</button>
@@ -199,6 +201,9 @@ document.getElementById("showCritical");
 
 const exportLogs =
 document.getElementById("exportLogs");
+
+const exportJson =
+document.getElementById("exportJson");
 
 const clearLogs =
 document.getElementById("clearLogs");
@@ -649,6 +654,50 @@ exportLogs.addEventListener(
 
         a.download =
         "filtered_logs.txt";
+
+        a.click();
+
+        URL.revokeObjectURL(
+            url
+        );
+    }
+);
+
+exportJson.addEventListener(
+    "click",
+    () => {
+
+        if (
+            !currentLogs.length
+        ) return;
+
+        const jsonData = JSON.stringify(currentLogs, null, 2);
+
+        const blob =
+        new Blob(
+            [
+                jsonData
+            ],
+            {
+                type:
+                "application/json"
+            }
+        );
+
+        const url =
+        URL.createObjectURL(
+            blob
+        );
+
+        const a =
+        document.createElement(
+            "a"
+        );
+
+        a.href = url;
+
+        a.download =
+        "filtered_logs.json";
 
         a.click();
 
