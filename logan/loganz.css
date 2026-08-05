@@ -238,7 +238,9 @@ input[type="file"]:hover,
 
 .actions button:active{
     transform:scale(.96);
-}.logs{
+}
+
+.logs{
     position:relative;
     background:rgba(31,41,55,.75);
     backdrop-filter:blur(15px);
